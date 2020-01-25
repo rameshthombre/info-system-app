@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="bcce0957-763d-414d-8513-46c458c6a5b3" >
+		<http:listener-connection host="${http.host}" port="${http.port}" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="586971b1-9f7b-4f47-b9a4-f61cebf8b07a" file="config-${mule}.yaml" />
+	<global-property doc:name="Global Property" doc:id="5cf1964b-a5a5-4935-96ab-9e76065a1aa0" name="mule" value="local" />
+	<file:config name="File_Config" doc:name="File Config" doc:id="eecc9445-2168-48d8-a52e-3db3e95f47c0" >
+		<file:connection workingDir="C:\Users\admin\Downloads\assessment" />
+	</file:config>
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="d75d0efc-a5ec-4b3e-a19e-8f721af0f298" >
+		<jms:active-mq-connection >
+			<jms:factory-configuration brokerUrl="tcp://localhost:61616"/>
+		</jms:active-mq-connection>
+	</jms:config>
+</mule>

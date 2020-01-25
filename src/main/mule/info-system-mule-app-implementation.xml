@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<flow name="info-system-mule-read-file-and-publish-data-implementationFlow" doc:id="77e05ad0-3f97-4ea9-9deb-6722725732ba" >
+		<http:listener doc:name="Listener" doc:id="3e616f92-8145-4ef5-9680-2c32c4e7a369" config-ref="HTTP_Listener_config" path="/sendMessage"/>
+		<logger level="INFO" doc:name="Start - Logger" doc:id="65af4703-499b-4a94-93e8-bd7aa11268aa" message="Start - Logger"/>
+		<file:read doc:name="Read file from the drive" doc:id="df021453-872a-4c5b-852c-1ee011c49140" config-ref="File_Config" path="C:\Users\admin\Downloads\assessment\SalesJan2009.csv"/>
+		<ee:transform doc:name="Transform Message Sales Data" doc:id="6478b126-5c48-4538-92e0-db33e5e7f3cd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map(item,index)->
+{
+    Transaction_date : item.Transaction_date,
+    Product : item.Product,
+    Price: if(item.Price=="1200") item.Price else "",
+    Country : item.Country,
+    Payment_Type: if(item.Payment_Type == "Mastercard") item.Payment_Type else ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<jms:publish doc:name="Publish Data Queue" doc:id="1f90933e-3b90-4d9b-bc52-48ffbf64d1dc" config-ref="JMS_Config" destination="salesQueue"/>
+		<logger level="INFO" doc:name="Publish End Logger" doc:id="2a1f84aa-321d-4330-8e8d-4618e66b0d5d" message="Publish End Logger #[payload]"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="41f0320a-4945-4512-8c5e-a8b0582b2d7c" >
+				<ee:transform doc:name="Transform Message" doc:id="a6795cac-c195-4021-a349-6757547664ad" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error" : error.description,
+	"ErrorDetails" : error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="9c18e909-9500-47aa-a07e-35e44d981ff3" message="could send message to Queue: #[payload]"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="info-system-jms-listener-implementationFlow1" doc:id="c72806e6-4f3d-4482-a3cf-f88243e4a680" initialState="started">
+		<jms:listener doc:name="Queue Data Listener" doc:id="cd26820c-e965-4b14-a995-e91d280ace45" config-ref="JMS_Config" destination="salesQueue" numberOfConsumers="1">
+			<reconnect count="3" />
+			<jms:consumer-type >
+				<jms:queue-consumer />
+			</jms:consumer-type>
+			<jms:response>
+				<jms:reply-to destination="salesQueue" />
+			</jms:response>
+		</jms:listener>
+		<ee:transform doc:name="Transform Message" doc:id="2b84d318-3299-49e8-a723-b490ed72dd11" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End Logger" doc:id="85097461-b99e-452f-aabf-77c856f2dd72" message="Listener End Logger #[payload]"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2a4a9f98-5121-4282-ab98-1e1d2ce2cc13" >
+				<ee:transform doc:name="Transform Message" doc:id="56c3c320-5052-4ba2-ab91-a7875be4ac3a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Error" : error.description,
+	"ErrorDetails" : error.detailedDescription
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="5b075c00-d931-413a-b064-6cde03313644" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>
